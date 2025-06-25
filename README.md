@@ -1,2 +1,2 @@
-# trabalho-final-vis-o
+# trabalho-final-visao
 Trabalho final de visão computacional
