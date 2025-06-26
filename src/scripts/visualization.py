@@ -6,7 +6,7 @@ from src.config import VISUALIZATIONS_DIR, MODEL_COMPLEXITY, MIN_DETECTION_CONFI
 
 # Loads an image, detects the pose, draws the skeleton, and saves
 # the result to a new image file.
-def visualize_single_image(image_path):
+def visualize(image_path):
     mp_pose = mp.solutions.pose
     mp_drawing = mp.solutions.drawing_utils
     pose_detector = mp_pose.Pose(
@@ -52,4 +52,4 @@ if __name__ == "__main__":
         print("Usage: python main_visualize.py <path_to_your_image>")
     else:
         image_to_visualize = sys.argv[1]
-        visualize_single_image(image_to_visualize)
+        visualize(image_to_visualize)

@@ -3,7 +3,7 @@ import shutil
 from src.config import SKELETONS_DIR, PROTOTYPES_DIR, VISUALIZATIONS_DIR
 
 # Clears generated files
-def clear_generated_files():
+def clean():
     # List of directories whose contents will be deleted
     dirs_to_clean = [
         SKELETONS_DIR,
@@ -26,4 +26,4 @@ def clear_generated_files():
     print("Cleanup complete!")
 
 if __name__ == "__main__":
-    clear_generated_files()
+    clean()
