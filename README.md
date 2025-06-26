@@ -45,7 +45,8 @@ The terminal will display the analysis, showing the most likely pose and the sim
 
 ### Step 3 (Optional): Visualizing a Skeleton
 
-If you want to check how MediaPipe "sees" a pose in a specific image, run:
+When running the main_train script, the program will already generate skeletons for all of the raw data used for training. 
+If you want to check on another image (validation ones for example), run:
 
 ```bash
 python main_visualize.py path/to/any/image.jpg
