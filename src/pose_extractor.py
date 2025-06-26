@@ -3,36 +3,37 @@ import mediapipe as mp
 import numpy as np
 from src.config import MODEL_COMPLEXITY, MIN_DETECTION_CONFIDENCE
 
-# Initialize MediaPipe 
 mp_pose = mp.solutions.pose
-pose_detector = mp_pose.Pose(
-    static_image_mode=True,
-    model_complexity=MODEL_COMPLEXITY,
-    min_detection_confidence=MIN_DETECTION_CONFIDENCE
-)
 
 def extract_landmarks(image_path):
     """
-    Receives an image path, detects the pose, and returns
-    a normalized landmark vector.
+    Receives an image path, creates a NEW pose detector, detects the pose,
+    and returns a normalized vector and the raw landmarks object.
     """
+    pose_detector = mp_pose.Pose(
+        static_image_mode=True,
+        model_complexity=MODEL_COMPLEXITY,
+        min_detection_confidence=MIN_DETECTION_CONFIDENCE
+    )
+
     image = cv2.imread(image_path)
     if image is None:
         print(f"Error: Could not read image at {image_path}")
-        return None
+        return None, None
 
-    # MediaPipe only accepts RGB
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     results = pose_detector.process(image_rgb)
 
     if not results.pose_landmarks:
-        return None
+        return None, None
 
-    # Extract landmarks and creates a flat vector with (x, y, visibility)
-    landmarks = results.pose_landmarks.landmark
-    pose_vector = np.array([[lm.x, lm.y, lm.visibility] for lm in landmarks]).flatten()
-
-    # L2 normalization to make the pose vector comparable regardless of size
+    # 1. Prepare the normalized vector for machine learning
+    landmarks_for_vector = results.pose_landmarks.landmark
+    pose_vector = np.array([[lm.x, lm.y, lm.visibility] for lm in landmarks_for_vector]).flatten()
     norm_vector = pose_vector / np.linalg.norm(pose_vector)
+    
+    # 2. Get the raw landmarks for visualization
+    raw_landmarks_for_drawing = results.pose_landmarks
 
-    return norm_vector
+    # Return both items
+    return norm_vector, raw_landmarks_for_drawing

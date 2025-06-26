@@ -4,11 +4,9 @@ import mediapipe as mp
 import os
 from src.config import VISUALIZATIONS_DIR, MODEL_COMPLEXITY, MIN_DETECTION_CONFIDENCE
 
+# Loads an image, detects the pose, draws the skeleton, and saves
+# the result to a new image file.
 def visualize_single_image(image_path):
-    """
-    Loads an image, detects the pose, draws the skeleton, and saves
-    the result to a new image file.
-    """
     mp_pose = mp.solutions.pose
     mp_drawing = mp.solutions.drawing_utils
     pose_detector = mp_pose.Pose(
