@@ -2,58 +2,44 @@
 
 This project uses computer vision, powered by Google's MediaPipe library, to detect, analyze, and classify bodybuilding poses from images. It's capable of learning new poses and classifying images based on a prototype model.
 
-## Features
-
-* **Skeleton Extraction:** Detects 33 keypoints (landmarks) of the human body in an image.
-* **Pose Prototype Training:** Learns a specific pose (e.g., "double biceps") from a set of sample images.
-* **Similarity-Based Classification:** Compares a new pose with trained prototypes and classifies it based on cosine similarity.
-* **Scalable Structure:** Designed so that new poses can be easily added without changing the core code.
-* **Visualization Tool:** A utility to generate and save an image with the detected skeleton for debugging and analysis.
-
 ## Setup and Installation
-
-### 1. Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Prepare Training Data
-
-Training images go in the correct folder structure. Each pose must have its own folder inside `data/raw/{pose}`.
-
-* **Example:** For the "double biceps" pose, place the images in `data/raw/double_biceps/`.
-
 ## Usage
 
-### Step 1: Training the Model
+All actions are run through the central `main.py` script.
 
-Program processes all pose classes found in `data/raw/`.
-
+### Training the Model
+This command processes images in `data/raw/`, saves skeletons and prototypes, and generates all visualizations.
 ```bash
-python main_train.py
+python main.py train
 ```
 
-### Step 2: Predicting a Pose
-
-To classify a new image, use the `main_predict.py`. It will compare the image's pose against all trained prototypes.
-
+### Predicting a pose
+To classify a new image, use the `predict` command. It will compare the image's pose against all trained prototypes.
 ```bash
-python main_predict.py path/to/your/test_image.jpg
+python main.py predict path/to/your/test_image.jpg
 ```
 The terminal will display the analysis, showing the most likely pose and the similarity score.
 
-### Step 3 (Optional): Visualizing a Skeleton
-
-When running the main_train script, the program will already generate skeletons for all of the raw data used for training. 
-If you want to check on another image (validation ones for example), run:
-
+### Running Validation
+This command runs prediction on all images in `data/validation/`, prints a summary report with accuracy stats to the terminal, and saves a bar chart (`accuracy_report.png`) in the `reports/` folder.
 ```bash
-python main_visualize.py path/to/any/image.jpg
+python main.py validate
 ```
 
-## Configuration in config.py
+### Visualizing a Single Skeleton
+To quickly check the skeleton on any image without running the full training process.
+```bash
+python main.py visualize path/to/any/image.jpg
+```
+The output image will be saved in `reports/visualizations/`.
 
-* `SIMILARITY_THRESHOLD`: The main parameter to adjust. This is the confidence threshold (between 0.0 and 1.0).
-    * **Increase the value** (e.g., to `0.95`) if the model is incorrectly classifying wrong poses as correct (False Positives).
-    * **Decrease the value** (e.g., to `0.80`) if the model is failing to recognize correct poses (False Negatives).
+### Cleaning Generated Files
+To delete all processed files (`prototypes`, `skeletons`, `visualizations`) and start fresh.
+```bash
+python main.py clean
+```
