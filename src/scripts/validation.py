@@ -3,7 +3,7 @@ import os
 import time
 import matplotlib.pyplot as plt
 from src.config import VALIDATION_DATA_DIR, SIMILARITY_THRESHOLD, REPORTS_DIR
-from .prediction import get_prediction # Importa a nova função
+from .prediction import get_prediction 
 
 def generate_accuracy_plot(results):
     """Generates and saves a bar chart of the accuracy results."""
