@@ -24,6 +24,11 @@ def run_clean(args):
     from src.scripts.cleanup import clean
     print("--> Running Cleanup Script...")
     clean()
+    
+def run_validate(args):
+    """Imports and runs the full validation script."""
+    from src.scripts.validation import validate_all
+    validate_all()
 
 def main():
     parser = argparse.ArgumentParser(
@@ -50,6 +55,10 @@ def main():
     # --- Command 'clean' ---
     parser_clean = subparsers.add_parser('clean', help='Clean all generated files.')
     parser_clean.set_defaults(func=run_clean)
+    
+    # --- Command 'validate' ---
+    parser_validate = subparsers.add_parser('validate', help='Run prediction on all images in the validation set.')
+    parser_validate.set_defaults(func=run_validate)
 
     # If no command is given, print the help message and exit
     if len(sys.argv) == 1:

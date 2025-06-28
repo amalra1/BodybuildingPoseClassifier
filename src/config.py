@@ -4,6 +4,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 RAW_DATA_DIR = os.path.join(DATA_DIR, "raw")
+VALIDATION_DATA_DIR = os.path.join(DATA_DIR, "validation")
 PROCESSED_DATA_DIR = os.path.join(DATA_DIR, "processed")
 PROTOTYPES_DIR = os.path.join(PROCESSED_DATA_DIR, "prototypes")
 SKELETONS_DIR = os.path.join(PROCESSED_DATA_DIR, "skeletons")
