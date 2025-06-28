@@ -8,7 +8,8 @@ VALIDATION_DATA_DIR = os.path.join(DATA_DIR, "validation")
 PROCESSED_DATA_DIR = os.path.join(DATA_DIR, "processed")
 PROTOTYPES_DIR = os.path.join(PROCESSED_DATA_DIR, "prototypes")
 SKELETONS_DIR = os.path.join(PROCESSED_DATA_DIR, "skeletons")
-VISUALIZATIONS_DIR = os.path.join(BASE_DIR, "reports", "visualizations") 
+VISUALIZATIONS_DIR = os.path.join(BASE_DIR, "reports", "visualizations")
+REPORTS_DIR = os.path.join(BASE_DIR, "reports") 
 
 # --- Model Configuration ---
 # Similarity threshold to consider a pose as a match.

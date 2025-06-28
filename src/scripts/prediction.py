@@ -1,13 +1,15 @@
-import sys
+# src/scripts/prediction.py
 import os
 import pickle
 import numpy as np
 from src.config import PROTOTYPES_DIR, SIMILARITY_THRESHOLD
 from src.pose_extractor import extract_landmarks
 
-# Loads all trained prototypes, extracts landmarks from the new image,
-# and finds the best matching pose.
-def predict(image_path):
+def get_prediction(image_path):
+    """
+    Core logic: loads prototypes, extracts landmarks, and returns the prediction details.
+    This function does NOT print, it just returns data.
+    """
     prototypes = {}
     try:
         for filename in os.listdir(PROTOTYPES_DIR):
@@ -16,32 +18,36 @@ def predict(image_path):
                 with open(os.path.join(PROTOTYPES_DIR, filename), 'rb') as f:
                     prototypes[pose_name] = pickle.load(f)
     except FileNotFoundError:
-        print(f"Error: Prototypes directory '{PROTOTYPES_DIR}' not found.")
-        print("Please run 'main_train.py' first.")
-        return
+        return None, None, "Prototypes directory not found."
 
     if not prototypes:
-        print("Error: No prototypes found. Please run 'main_train.py' first.")
-        return
+        return None, None, "No prototypes found."
 
-    # We only need the 'test_vector' for calculations.
     test_vector, _ = extract_landmarks(image_path)
-
     if test_vector is None:
-        print("Could not detect a pose in the test image.")
-        return
+        return None, None, "Could not detect a pose in the test image."
 
     best_match = None
     max_similarity = -1
-
     for pose_name, prototype_vector in prototypes.items():
-        # Calculate the cosine similarity
         cosine_similarity = np.dot(test_vector, prototype_vector)
         if cosine_similarity > max_similarity:
             max_similarity = cosine_similarity
             best_match = pose_name
 
-    # Results
+    return best_match, max_similarity, None # Return results, no error
+
+def predict(image_path):
+    """
+    Wrapper function that gets a prediction and prints it to the console.
+    This is used by the 'predict' command in main.py.
+    """
+    best_match, max_similarity, error = get_prediction(image_path)
+
+    if error:
+        print(f"Error: {error}")
+        return
+
     print("\n--- POSE ANALYSIS ---")
     print(f"Best match: '{best_match}'")
     print(f"Similarity Score: {max_similarity:.2%}")
@@ -51,11 +57,3 @@ def predict(image_path):
         print(f"\nResult: The detected pose is '{best_match}'.")
     else:
         print("\nResult: The pose does not match any known prototype with enough confidence.")
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python main_predict.py <path_to_your_image>")
-    else:
-        image_to_test = sys.argv[1]
-        predict(image_to_test)
