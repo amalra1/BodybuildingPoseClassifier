@@ -18,14 +18,14 @@ This command processes images in `data/raw/`, saves skeletons and prototypes, an
 python main.py train
 ```
 
-### Predicting a pose
+### Predicting a specific pose
 To classify a new image, use the `predict` command. It will compare the image's pose against all trained prototypes.
 ```bash
 python main.py predict path/to/your/test_image.jpg
 ```
 The terminal will display the analysis, showing the most likely pose and the similarity score.
 
-### Running Validation
+### Predicting all poses at once
 This command runs prediction on all images in `data/validation/`, prints a summary report with accuracy stats to the terminal, and saves a bar chart (`accuracy_report.png`) in the `reports/` folder.
 ```bash
 python main.py validate
