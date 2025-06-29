@@ -13,6 +13,12 @@ def run_predict(args):
     print(f"--> Running Prediction for: {args.image_path}")
     predict(args.image_path)
 
+def run_real_time(args):
+    """Imports and runs the real-time pose detection script."""
+    from src.scripts.real_time import detect_real_time
+    print("--> Running Real-Time Pose Detection...")
+    detect_real_time()
+
 def run_visualize(args):
     """Imports and runs the visualization script."""
     from src.scripts.visualization import visualize
@@ -46,6 +52,10 @@ def main():
     parser_predict = subparsers.add_parser('predict', help='Predict the pose for a single image.')
     parser_predict.add_argument('image_path', type=str, help='Path to the image to be classified.')
     parser_predict.set_defaults(func=run_predict)
+
+    # --- Command 'real_time' ---
+    parser_real_time = subparsers.add_parser('real_time', help='Run real-time pose detection using webcam.')
+    parser_real_time.set_defaults(func=run_real_time)
     
     # --- Command 'visualize' ---
     parser_visualize = subparsers.add_parser('visualize', help='Generate a skeleton visualization for an image.')

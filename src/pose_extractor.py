@@ -7,8 +7,8 @@ mp_pose = mp.solutions.pose
 
 def extract_landmarks(image_path):
     """
-    Receives an image path, creates a NEW pose detector, detects the pose,
-    and returns a normalized vector and the raw landmarks object.
+    Extract normalized landmarks from an image.
+    Standardizes by centering on the nose and scaling by the distance between shoulders.
     """
     pose_detector = mp_pose.Pose(
         static_image_mode=True,
@@ -27,13 +27,18 @@ def extract_landmarks(image_path):
     if not results.pose_landmarks:
         return None, None
 
-    # 1. Prepare the normalized vector for machine learning
-    landmarks_for_vector = results.pose_landmarks.landmark
-    pose_vector = np.array([[lm.x, lm.y, lm.visibility] for lm in landmarks_for_vector]).flatten()
-    norm_vector = pose_vector / np.linalg.norm(pose_vector)
-    
-    # 2. Get the raw landmarks for visualization
-    raw_landmarks_for_drawing = results.pose_landmarks
+    landmarks = results.pose_landmarks.landmark
+    coords = np.array([[lm.x, lm.y, lm.z] for lm in landmarks], dtype=np.float32)
 
-    # Return both items
-    return norm_vector, raw_landmarks_for_drawing
+    # Centralize on nose (landmark 0)
+    center = coords[0]
+    coords -= center
+
+    # Normalize by the distance between shoulders (landmarks 11 and 12)
+    shoulder_dist = np.linalg.norm(coords[11] - coords[12])
+    if shoulder_dist > 0:
+        coords /= shoulder_dist
+
+    # Flatten to a 1D vector
+    norm_vector = coords.flatten()
+    return norm_vector, results.pose_landmarks
