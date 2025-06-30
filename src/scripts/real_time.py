@@ -1,42 +1,38 @@
+# src/scripts/real_time.py
+
 import cv2
 import numpy as np
 import os
 import pickle
 import mediapipe as mp
-from src.config import PROTOTYPES_DIR, SIMILARITY_THRESHOLD
+from src.config import PROTOTYPES_DIR, SIMILARITY_THRESHOLD, MODEL_COMPLEXITY, MIN_DETECTION_CONFIDENCE
 
+# --- MediaPipe Initialization for Real-Time ---
 mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
-_pose = mp_pose.Pose(static_image_mode=False, model_complexity=2)
+realtime_pose_detector = mp_pose.Pose(
+    static_image_mode=False, 
+    model_complexity=1, # Usamos complexidade 1 para maior velocidade
+    min_detection_confidence=MIN_DETECTION_CONFIDENCE,
+    min_tracking_confidence=0.5
+)
 
-def extract_landmarks_fast(frame):
-    image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    result = _pose.process(image_rgb)
-
-    if not result.pose_landmarks:
-        return None, None
-
-    landmarks = result.pose_landmarks.landmark
-
-    # Obtem x, y, z como numpy array (33, 3)
-    coords = np.array([[lm.x, lm.y, lm.z] for lm in landmarks], dtype=np.float32)
-
-    # Centraliza no centro do quadril (landmark 0)
-    center = coords[0]
-    coords -= center
-
-    # Normaliza pela distância entre ombros (landmarks 11 e 12)
-    shoulder_dist = np.linalg.norm(coords[11] - coords[12])
-    if shoulder_dist > 0:
-        coords /= shoulder_dist
-
-    # Achata para vetor 1D
-    vector = coords.flatten()
-
-    return vector, result.pose_landmarks
+def extract_and_normalize_for_comparison(pose_landmarks_object):
+    """
+    Takes a MediaPipe pose landmarks object and normalizes it using the
+    standard L2-norm method, consistent with the training script.
+    """
+    pose_vector = np.array([[lm.x, lm.y, lm.visibility] for lm in pose_landmarks_object.landmark]).flatten()
+    
+    norm_vector = pose_vector / np.linalg.norm(pose_vector)
+    
+    return norm_vector
 
 def load_prototypes():
+    """Loads all trained pose prototypes from the disk."""
     prototypes = {}
+    if not os.path.exists(PROTOTYPES_DIR):
+        return None
     for filename in os.listdir(PROTOTYPES_DIR):
         if filename.endswith("_prototype.pkl"):
             class_name = filename.replace("_prototype.pkl", "")
@@ -44,12 +40,9 @@ def load_prototypes():
                 prototypes[class_name] = pickle.load(f)
     return prototypes
 
-def predict_from_frame_fast(frame, prototypes):
-    test_vector, pose_landmarks = extract_landmarks_fast(frame)
-    if test_vector is None:
-        return None, None, "No pose detected", None
-
-    test_vector /= np.linalg.norm(test_vector)
+def predict_from_frame(raw_landmarks, prototypes):
+    """Runs the prediction comparison on detected landmarks."""
+    test_vector = extract_and_normalize_for_comparison(raw_landmarks)
 
     best_match = None
     max_similarity = -1
@@ -60,59 +53,63 @@ def predict_from_frame_fast(frame, prototypes):
             max_similarity = similarity
             best_match = class_name
 
-    return best_match, max_similarity, None, pose_landmarks
+    return best_match, max_similarity
+
 
 def detect_real_time():
-    """
-    Wrapper function for real-time pose detection using webcam.
-    This is used by the 'real_time' command in main.py.
-    """
-
-    print("Iniciando detecção em tempo real...")
+    """Main function to run real-time pose detection using a webcam."""
+    print("Starting real-time detection...")
     prototypes = load_prototypes()
     if not prototypes:
-        print("Nenhum protótipo encontrado.")
+        print("Error: No prototypes found. Please run 'main.py train' first.")
         return
 
     cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv2.CAP_PROP_FPS, 30)
+    
+    if not cap.isOpened():
+        print("Error: Could not open webcam.")
+        return
 
-    last_text = "Procurando pose..."
-    last_color = (0, 165, 255)
-    last_landmarks = None
+    print("Webcam opened successfully. Press 'q' to quit.")
 
     while True:
         ret, frame = cap.read()
-        if not ret:
-            break
+        if not ret: break
 
-        best_match, similarity, error, pose_landmarks = predict_from_frame_fast(frame, prototypes)
+        # 1. Detects pose on frame
+        image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = realtime_pose_detector.process(image_rgb)
 
-        if error:
-            last_text = error
-            last_color = (0, 0, 255)
-            last_landmarks = None
-        else:
-            last_text = f"{best_match} ({similarity:.2%})"
-            last_color = (0, 255, 0) if similarity >= SIMILARITY_THRESHOLD else (0, 165, 255)
-            last_landmarks = pose_landmarks
+        display_text = "No pose detected"
+        text_color = (0, 0, 255) # Red
 
-        # Draw landmarks if available
-        if last_landmarks:
+        # 2. If pose found, compare with prototypes
+        if results.pose_landmarks:
+            best_match, similarity = predict_from_frame(results.pose_landmarks, prototypes)
+            
+            display_text = f"{best_match} ({similarity:.2%})"
+            text_color = (0, 255, 0) if similarity >= SIMILARITY_THRESHOLD else (0, 165, 255)
+            
+            # Draws skeleton
             mp_drawing.draw_landmarks(
                 frame,
-                last_landmarks,
+                results.pose_landmarks,
                 mp_pose.POSE_CONNECTIONS,
-                mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
-                mp_drawing.DrawingSpec(color=(0, 165, 255), thickness=2),
+                mp_drawing.DrawingSpec(color=(255, 255, 255), thickness=2, circle_radius=2),
+                mp_drawing.DrawingSpec(color=(200, 200, 200), thickness=2),
             )
 
-        # Overlay text
-        cv2.putText(frame, last_text, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, last_color, 2)
-        cv2.imshow("Pose Detection (Realtime)", frame)
+        # Pose label on top
+        cv2.rectangle(frame, (0,0), (640, 40), (0,0,0), -1)
+        cv2.putText(frame, display_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, text_color, 2)
+        cv2.imshow("Real-Time Pose Detection", frame)
 
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+        if cv2.waitKey(1) & 0xFF == ord('q'): break
 
     cap.release()
     cv2.destroyAllWindows()
-
+    print("Real-time detection stopped.")
