@@ -38,6 +38,12 @@ python main.py visualize path/to/any/image.jpg
 ```
 The output image will be saved in `reports/visualizations/`.
 
+### Real-time pose detection
+Uses Web-Cam to detect poses in real-time. Certify your whole body is being framed in camera.
+```bash
+python main.py real-time
+```
+
 ### Cleaning Generated Files
 To delete all processed files (`prototypes`, `skeletons`, `visualizations`) and start fresh.
 ```bash
